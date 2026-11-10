@@ -16,9 +16,8 @@
  *
  * As secoes TOKENS e RULES e a regra completa (regra) ja estao prontas,
  * incluindo a recuperacao de erros por sincronizacao no ';'.
- *
- * TODO(aluno): implementar parse_expr, parse_seq e parse_fator, que
- * constroem a arvore Expr do lado direito das regras (ver gramatica.h).
+ * parse_expr, parse_seq e parse_fator constroem a arvore Expr do lado
+ * direito das regras (ver gramatica.h).
  */
 #include <stdlib.h>
 #include <string.h>
@@ -84,40 +83,97 @@ static void sincronizar(Parser *p)
 
 static Expr *parse_expr(Parser *p);
 
-/*
- * TODO(aluno): implementar as funcoes abaixo seguindo a gramatica da
- * notacao (cabecalho deste arquivo), uma funcao por nao terminal:
- *
- *   static Expr *parse_expr(Parser *p);   expr  = seq { "|" seq } ;
- *   static Expr *parse_seq(Parser *p);    seq   = { fator } ;
- *   static Expr *parse_fator(Parser *p);  fator = NOME_TERM | LITERAL | ...
- *
- * Dicas:
- *   - O token corrente esta em p->tok (tipo, texto, linha, coluna);
- *     avancar(p) consome-o e esperar(p, MT_...) consome um token exigido.
- *   - Terminais: gram_terminal(p->g, texto, literal, linha, coluna)
- *     devolve o indice; crie o no com expr_simbolo(E_TERM, ...).
- *   - Nao terminais: gram_naoterminal(...) e expr_simbolo(E_NAOTERM, ...).
- *   - [ a ] e { a }: expr_unario(E_OPC, a, ...) e expr_unario(E_REP, a, ...).
- *   - ( a ) nao cria no: devolva a propria arvore de a.
- *   - Evite nos com um unico filho: uma sequencia com um so fator ou
- *     uma alternativa unica devem ser devolvidas diretamente.
- *   - Uma sequencia vazia (ex.: "a = ;" ou "b | ") vira E_VAZIO.
- *
- * O stub abaixo apenas descarta o lado direito da regra, para que o
- * gerador compile e execute de ponta a ponta. Substitua-o.
- */
+/*feito */
+static int inicia_fator(const Parser *p)
+{
+    switch (p->tok.tipo) {
+    case MT_NOME_TERM:
+    case MT_NAOTERM:
+    case MT_LITERAL:
+    case MT_ABRE_PAR:
+    case MT_ABRE_COL:
+    case MT_ABRE_CHAVE:
+        return 1;
+    default:
+        return 0;
+    }
+}
+
+/*feito */
+static Expr *parse_fator(Parser *p)
+{
+    Expr *e;
+    int s, l = p->tok.linha, c = p->tok.coluna;
+
+    switch (p->tok.tipo) {
+    case MT_NOME_TERM:
+        s = gram_terminal(p->g, p->tok.texto, 0, l, c);
+        avancar(p);
+        return expr_simbolo(E_TERM, s, l, c);
+    case MT_LITERAL:
+        s = gram_terminal(p->g, p->tok.texto, 1, l, c);
+        avancar(p);
+        return expr_simbolo(E_TERM, s, l, c);
+    case MT_NAOTERM:
+        s = gram_naoterminal(p->g, p->tok.texto, l, c);
+        avancar(p);
+        return expr_simbolo(E_NAOTERM, s, l, c);
+    case MT_ABRE_PAR:
+        avancar(p);
+        e = parse_expr(p);
+        esperar(p, MT_FECHA_PAR);
+        return e;
+    case MT_ABRE_COL:
+        avancar(p);
+        e = parse_expr(p);
+        esperar(p, MT_FECHA_COL);
+        return expr_unario(E_OPC, e, l, c);
+    case MT_ABRE_CHAVE:
+        avancar(p);
+        e = parse_expr(p);
+        esperar(p, MT_FECHA_CHAVE);
+        return expr_unario(E_REP, e, l, c);
+    default:
+        erro_encontrado(p, "fator");
+        avancar(p);
+        return expr_criar(E_VAZIO, l, c);
+    }
+}
+
+/*feito */
+static Expr *parse_seq(Parser *p)
+{
+    Expr *primeiro, *seq;
+    int l = p->tok.linha, c = p->tok.coluna;
+
+    if (!inicia_fator(p))
+        return expr_criar(E_VAZIO, l, c);
+    primeiro = parse_fator(p);
+    if (!inicia_fator(p))
+        return primeiro;
+    seq = expr_criar(E_SEQ, l, c);
+    expr_adicionar(seq, primeiro);
+    while (inicia_fator(p))
+        expr_adicionar(seq, parse_fator(p));
+    return seq;
+}
+
+/*feito */
 static Expr *parse_expr(Parser *p)
 {
-    static int avisado = 0;
+    Expr *primeiro, *alt;
     int l = p->tok.linha, c = p->tok.coluna;
-    if (!avisado) {
-        diag_aviso(l, c, "parse_expr ainda nao implementado: regras lidas como vazias");
-        avisado = 1;
-    }
-    while (p->tok.tipo != MT_PV && p->tok.tipo != MT_FIM)
+
+    primeiro = parse_seq(p);
+    if (p->tok.tipo != MT_BARRA)
+        return primeiro;
+    alt = expr_criar(E_ALT, l, c);
+    expr_adicionar(alt, primeiro);
+    while (p->tok.tipo == MT_BARRA) {
         avancar(p);
-    return expr_criar(E_VAZIO, l, c);
+        expr_adicionar(alt, parse_seq(p));
+    }
+    return alt;
 }
 
 /* ------------------------------------------------------------------ */
