@@ -240,5 +240,3 @@ int verif_basica(Gramatica *g, int modo_microc)
         erros += verif_improdutivos(g);
     return erros;
 }
-
-}
