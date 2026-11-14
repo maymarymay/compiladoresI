@@ -41,16 +41,6 @@ static void reportar(const Gramatica *g, int nt, const Expr *e, int eh_aviso,
     fputc('\n', stderr);
 }
 
-/* TODO(aluno): percorrer as regras e, para cada no E_ALT, E_OPC e E_REP,
- * verificar as condicoes do cabecalho. Use bitset_intersecao/bitset_vazio
- * e reporte com reportar(...), por exemplo:
- *
- *   reportar(g, nt, e, 0, &comum, "alternativas %d e %d comecam com", i+1, j+1);
- *
- * que imprime:
- *   expr.ebnf:7:10: erro: conflito LL(1) em stmt: alternativas 1 e 2 comecam com {ID}
- *
- * Retorne o numero de ERROS (avisos nao contam). */
 /* Verifica uma expressao da regra do nao terminal nt. Conta os erros em *erros. */
 static void verificar_expr(const Gramatica *g, int nt, const Expr *e, int *erros)
 {
