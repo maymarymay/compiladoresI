@@ -1,12 +1,11 @@
 ## USO_IA.md
 
-Registre aqui cada uso relevante de ferramentas de IA generativa, como no TP1. Se nenhuma foi usada, deixe apenas a frase:
+Ferramenta: claude
+Trecho: README.md
+Finalidade: foi pedido para fazer um readme
+O que fiz: adaptei e organizei melhor o readme do jeito que eu queria
 
-Nenhuma ferramenta de IA foi utilizada no desenvolvimento deste trabalho.
-
-Modelo de entrada:
-
-    Ferramenta: <ferramenta e modelo>
-    Trecho:     <arquivo ou parte do trabalho>
-    Finalidade: <o que foi pedido, de forma especifica>
-    O que fiz:  <usado integralmente, adaptado ou apenas consultado>
+Ferramenta: claude
+Trecho: bugs no passo 1 e 2 e outras coisas que não estava entendendo
+Finalidade: foi pedido para explicar o que era pra ser feito e o que foi sendo feito pedi para corrigir bugs
+O que fiz: implementei o código e corrigi o que estava dando errado
