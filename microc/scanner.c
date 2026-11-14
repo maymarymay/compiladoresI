@@ -24,15 +24,14 @@ extern FILE *microc_yyin;
 extern char *microc_yytext;
 extern int   linha_atual;
 extern int   microc_yylex_destroy(void);
+extern struct { char *symbol; char *error_msg; int symbol_len; } microc_yylval;
 
 /* Texto a guardar em Token.lexema para o token que microc_yylex acabou
  * de devolver. */
 static const char *texto_do_lexema(int tipo)
 {
-    /* TODO(aluno): para ID, INTEGERCONST, CHARCONST e STRINGCONST, devolva
-     * o texto do Symbol em microc_yylval.symbol; para UNDEF, devolva
-     * microc_yylval.error_msg. */
-    (void) tipo;
+    if (tipo == UNDEF && microc_yylval.error_msg != NULL)
+        return microc_yylval.error_msg;
     return microc_yytext;
 }
 

@@ -17,7 +17,6 @@
  * em que o else fica com o if mais proximo, como em C.
  *
  * Fornecido: reportar (formata as mensagens).
- * TODO(aluno): verificar_expr e ll1_verificar.
  */
 #include <stdarg.h>
 #include <stdio.h>
@@ -52,9 +51,91 @@ static void reportar(const Gramatica *g, int nt, const Expr *e, int eh_aviso,
  *   expr.ebnf:7:10: erro: conflito LL(1) em stmt: alternativas 1 e 2 comecam com {ID}
  *
  * Retorne o numero de ERROS (avisos nao contam). */
+/* Verifica uma expressao da regra do nao terminal nt. Conta os erros em *erros. */
+static void verificar_expr(const Gramatica *g, int nt, const Expr *e, int *erros)
+{
+    int i, j;
+    Bitset comum;
+    const Expr *a, *b;
+
+    for (i = 0; i < e->nfilhos; i++)
+        verificar_expr(g, nt, e->filhos[i], erros);
+
+    if (e->tipo == E_ALT) {
+        for (i = 0; i < e->nfilhos; i++) {
+            a = e->filhos[i];
+            for (j = i + 1; j < e->nfilhos; j++) {
+                b = e->filhos[j];
+
+                /* Condicao 1: FIRST das alternativas disjuntos */
+                bitset_iniciar(&comum, g->nterms);
+                bitset_intersecao(&comum, &a->first, &b->first);
+                if (!bitset_vazio(&comum)) {
+                    reportar(g, nt, e, 0, &comum,
+                             "alternativas %d e %d comecam com", i + 1, j + 1);
+                    (*erros)++;
+                }
+                bitset_liberar(&comum);
+
+                /* Condicao 1: no maximo uma alternativa anulavel */
+                if (a->anulavel && b->anulavel) {
+                    reportar(g, nt, e, 0, NULL,
+                             "alternativas %d e %d sao ambas anulaveis", i + 1, j + 1);
+                    (*erros)++;
+                    continue;
+                }
+
+                /* Condicao 2: se ai e anulavel, FOLLOW(ai) e disjunto de FIRST(aj) */
+                if (a->anulavel) {
+                    bitset_iniciar(&comum, g->nterms);
+                    bitset_intersecao(&comum, &a->follow, &b->first);
+                    if (!bitset_vazio(&comum)) {
+                        reportar(g, nt, e, 0, &comum,
+                                 "alternativa %d e anulavel e o FOLLOW colide com o FIRST da alternativa %d",
+                                 i + 1, j + 1);
+                        (*erros)++;
+                    }
+                    bitset_liberar(&comum);
+                }
+                if (b->anulavel) {
+                    bitset_iniciar(&comum, g->nterms);
+                    bitset_intersecao(&comum, &b->follow, &a->first);
+                    if (!bitset_vazio(&comum)) {
+                        reportar(g, nt, e, 0, &comum,
+                                 "alternativa %d e anulavel e o FOLLOW colide com o FIRST da alternativa %d",
+                                 j + 1, i + 1);
+                        (*erros)++;
+                    }
+                    bitset_liberar(&comum);
+                }
+            }
+        }
+    } else if (e->tipo == E_OPC || e->tipo == E_REP) {
+        const char *op = (e->tipo == E_OPC) ? "[ ]" : "{ }";
+        a = e->filhos[0];
+
+        /* Condicao 3a: o conteudo nao pode ser anulavel (erro) */
+        if (a->anulavel) {
+            reportar(g, nt, e, 0, NULL, "o conteudo de %s e anulavel", op);
+            (*erros)++;
+        } else {
+            /* Condicao 3b: FIRST(a) x FOLLOW da construcao (aviso, resolvido de forma gulosa) */
+            bitset_iniciar(&comum, g->nterms);
+            bitset_intersecao(&comum, &a->first, &e->follow);
+            if (!bitset_vazio(&comum))
+                reportar(g, nt, e, 1, &comum,
+                         "FIRST e FOLLOW de %s se intersectam (resolvido de forma gulosa) em", op);
+            bitset_liberar(&comum);
+        }
+    }
+}
+
 int ll1_verificar(const Gramatica *g)
 {
-    (void) reportar;
-    (void) g;
-    return 0;
+    int i, erros = 0;
+
+    for (i = 0; i < g->nnts; i++)
+        if (g->nts[i].regra != NULL)
+            verificar_expr(g, i, g->nts[i].regra, &erros);
+    return erros;
 }
