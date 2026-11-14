@@ -1,0 +1,2 @@
+testes/gramaticas/recursao_mascarada.ebnf:6: erro: nao terminal a tem recursao a esquerda direta
+status 1

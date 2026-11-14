@@ -1,0 +1,7 @@
+(* Deve ser RECUSADA: b e anulavel, logo a = b a "c" tem recursao a esquerda mascarada *)
+TOKENS
+  SKIP = /[ \t\r\n]+/ ;
+
+RULES
+  a = b a "c" | "d" ;
+  b = [ "b" ] ;
