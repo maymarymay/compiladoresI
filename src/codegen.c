@@ -966,27 +966,74 @@ static int gen_casamento_regex(FILE *f, const char *nome, const char *regex)
  *   Token: tipo = <numero>, lexema = '<texto>', linha = <numero>
  *
  * Ao chegar ao fim do arquivo devolve um token TOKEN_FIM. */
-static void gen_token_de_arquivo(FILE *f, int microc)
+static void gen_token_de_arquivo(FILE *f, const Gramatica *g)
 {
-    /* TODO(aluno): emitir a leitura real com fgets + sscanf (formato
-     * acima). Linhas em branco sao ignoradas; uma linha malformada deve
-     * ser reportada com o numero da linha do arquivo de tokens. */
+    int i;
     static const char *const linhas[] = {
         "static Token token_de_arquivo(void)",
         "{",
+        "    static int num_linha = 0;",
+        "    char linha[512];",
+        "    char nome[64];",
+        "    char lexema[256];",
+        "    char *p, *q, *lin, *fim;",
+        "    int k;",
         "    Token t;",
         "    memset(&t, 0, sizeof t);",
-        "    fprintf(stderr, \"opcao --tokens ainda nao implementada\\n\");",
-        "    exit(EXIT_FAILURE);",
+        "    while (fgets(linha, sizeof linha, arquivo_tokens) != NULL) {",
+        "        num_linha++;",
+        "        p = linha;",
+        "        while (*p == ' ' || *p == '\\t' || *p == '\\r' || *p == '\\n')",
+        "            p++;",
+        "        if (*p == '\\0')",
+        "            continue;",
+        "        p = strstr(p, \"tipo = \");",
+        "        q = p ? strstr(p, \"lexema = '\") : NULL;",
+        "        lin = q ? strstr(q, \"linha = \") : NULL;",
+        "        if (lin == NULL || sscanf(p + 7, \"%63[A-Za-z_0-9]\", nome) != 1) {",
+        "            fprintf(stderr, \"arquivo de tokens, linha %d: formato invalido\\n\", num_linha);",
+        "            exit(EXIT_FAILURE);",
+        "        }",
+        "        q += 10;",
+        "        fim = lin;",
+        "        while (fim > q && (*(fim - 1) == ' ' || *(fim - 1) == ','))",
+        "            fim--;",
+        "        if (fim - q < 1 || *(fim - 1) != '\\'') {",
+        "            fprintf(stderr, \"arquivo de tokens, linha %d: formato invalido\\n\", num_linha);",
+        "            exit(EXIT_FAILURE);",
+        "        }",
+        "        fim--;",
+        "        k = (int) (fim - q);",
+        "        if (k > (int) sizeof lexema - 1)",
+        "            k = (int) sizeof lexema - 1;",
+        "        memcpy(lexema, q, k);",
+        "        lexema[k] = '\\0';",
+        "        for (k = 0; tabela_tipos[k].nome != NULL; k++)",
+        "            if (strcmp(tabela_tipos[k].nome, nome) == 0)",
+        "                break;",
+        "        if (tabela_tipos[k].nome == NULL) {",
+        "            fprintf(stderr, \"arquivo de tokens, linha %d: tipo desconhecido '%s'\\n\", num_linha, nome);",
+        "            exit(EXIT_FAILURE);",
+        "        }",
+        "        t.tipo = tabela_tipos[k].tipo;",
+        "        strncpy(t.lexema, lexema, sizeof t.lexema - 1);",
+        "        t.lexema[sizeof t.lexema - 1] = '\\0';",
+        "        t.linha = atoi(lin + 8);",
+        "        return t;",
+        "    }",
+        "    t.tipo = TOKEN_FIM;",
         "    return t;",
         "}",
         "",
         NULL
     };
-    (void) microc;
+
+    fputs("static const struct { const char *nome; int tipo; } tabela_tipos[] = {\n", f);
+    for (i = 0; i < g->nterms; i++)
+        fprintf(f, "    { \"%s\", %s },\n", g->terms[i].nome_c, g->terms[i].nome_c);
+    fputs("    { NULL, 0 }\n};\n\n", f);
     emit_linhas(f, linhas);
 }
-
 /* ------------------------------------------------------------------ */
 /* Partes fixas do codigo gerado                                      */
 /* ------------------------------------------------------------------ */
@@ -1424,7 +1471,7 @@ static int gerar_c(const Gramatica *g, const OpcoesGeracao *op)
     gerar_nome_token(f, g);
     gerar_posicao_e_avancar(f, op->microc);
     emit_linhas(f, rt_primitivas);
-    gen_token_de_arquivo(f, op->microc);
+    gen_token_de_arquivo(f, g);
     rewind(corpo);
     while ((c = fgetc(corpo)) != EOF)
         fputc(c, f);
