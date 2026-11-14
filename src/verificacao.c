@@ -1,4 +1,4 @@
- /*
+/*
  * verificacao.c - Verificacoes semanticas da gramatica (etapa 2).
  *
  * Verificacoes:
@@ -63,10 +63,10 @@ static int verif_terminais(Gramatica *g, int modo_microc)
 }
 
 /* ------------------------------------------------------------------ */
-/* A implementar                                                      */
+/* Inalcancaveis                                                      */
 /* ------------------------------------------------------------------ */
 
-/* marca em marcas[] os nao terminais que aparecem em e; "mudou" mostra se alguma marca nova foi feita */
+/* marca em marcas[] os nao terminais que aparecem em e; "mudou" indica se alguma marca nova foi feita */
 typedef struct {
     int *marcas;
     int mudou;
@@ -110,6 +110,10 @@ static int verif_inalcancaveis(Gramatica *g)
     return 0;
 }
 
+/* ------------------------------------------------------------------ */
+/* Improdutivos                                                       */
+/* ------------------------------------------------------------------ */
+
 /* uma expressao eh produtiva se deriva alguma cadeia de terminais: terminais, E_VAZIO, [ .. ] e { .. } sempre sao; uma sequencia exige todos os filhos produtivos; uma alternativa exige ao menos um. */
 static int produtiva(const Expr *e, const int *prod)
 {
@@ -136,7 +140,7 @@ static int produtiva(const Expr *e, const int *prod)
     return 0;
 }
 
-/* um erro para cada nao terminal definido que nao deriva nenhuma cadeia de terminais e retorna o numero de erros. */
+/* um erro para cada nao terminal definido que nao deriva nenhuma cadeia de terminais; retorna o numero de erros. */
 static int verif_improdutivos(Gramatica *g)
 {
     int i, mudou, erros = 0;
@@ -164,8 +168,15 @@ static int verif_improdutivos(Gramatica *g)
     return erros;
 }
 
-/* marca em esq[] os nao terminais que podem aparecer na primeira posicao de e*/
-/* um filho de uma sequencia so deixa o proximo chegar a primeira posicao se for anulavel, o q cobre prefixos como [ x ] e { x }. */
+/* ------------------------------------------------------------------ */
+/* Recursao a esquerda                                                */
+/* ------------------------------------------------------------------ */
+
+/*
+ * marca em esq[] os nao terminais que podem aparecer na primeira posicao de e.
+ * Um filho de uma sequencia so deixa o proximo chegar a primeira posicao
+ * se for anulavel, o que cobre prefixos como [ x ] e { x }.
+ */
 static void primeiros_nts(const Expr *e, int *esq)
 {
     int i;
@@ -194,7 +205,11 @@ static void primeiros_nts(const Expr *e, int *esq)
     }
 }
 
-/* um erro pra cada nao terminal recursivo a esquerda: direta se ele mesmo aparece na primeira posicao da sua regra, indireta se chega a si mesmo por outros nao terminais*/ 
+/*
+ * Um erro para cada nao terminal recursivo a esquerda: "direta" se ele
+ * mesmo aparece na primeira posicao da sua regra, "indireta" se chega a
+ * si mesmo por outros nao terminais.
+ */
 int verif_recursao_esquerda(Gramatica *g)
 {
     int i, j, k, n = g->nnts, erros = 0;
@@ -207,6 +222,7 @@ int verif_recursao_esquerda(Gramatica *g)
     for (i = 0; i < n; i++)
         direta[i] = adj[i * n + i];
 
+    /* fecho transitivo (Warshall) */
     for (k = 0; k < n; k++)
         for (i = 0; i < n; i++)
             if (adj[i * n + k])
@@ -225,6 +241,10 @@ int verif_recursao_esquerda(Gramatica *g)
     free(direta);
     return erros;
 }
+
+/* ------------------------------------------------------------------ */
+/* Ponto de entrada                                                   */
+/* ------------------------------------------------------------------ */
 
 int verif_basica(Gramatica *g, int modo_microc)
 {
