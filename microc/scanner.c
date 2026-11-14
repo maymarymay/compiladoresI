@@ -2,36 +2,42 @@
  * scanner.c - Adaptador entre o scanner do TP1 (microc.flex) e o
  * analisador sintatico gerado (secao 3.1 do enunciado).
  *
- * Esta versao funciona com qualquer scanner flex gerado com
- *     %option prefix="microc_yy"
- * que mantenha a variavel global linha_atual (TP1, secao 4.4). Sem
- * alteracoes, o lexema de cada token e o texto reconhecido (microc_yytext).
- *
- * TODO(aluno): adaptar os pontos marcados ao seu TP1, para que
- *   - ID e constantes usem o texto do Symbol (microc_yylval.symbol), ja
- *     com as sequencias de escape convertidas (TP1, secao 4.3);
- *   - UNDEF traga a mensagem de microc_yylval.error_msg
- *     ("String nao terminada", "EOF em comentario" etc.);
- *   - scanner_finalizar libere a tabela de strings.
+ * Usa o scanner flex gerado com %option prefix="microc_yy" e a
+ * variavel global linha_atual (TP1, secao 4.4).
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "scanner.h"
+#include "microc_yylval.h"
 
-/* ---- simbolos do scanner gerado pelo flex (ajuste ao seu TP1) ---- */
+/* ---- simbolos do scanner gerado pelo flex ---- */
 extern int   microc_yylex(void);
 extern FILE *microc_yyin;
 extern char *microc_yytext;
 extern int   linha_atual;
 extern int   microc_yylex_destroy(void);
-extern struct { char *symbol; char *error_msg; int symbol_len; } microc_yylval;
 
-/* Texto a guardar em Token.lexema para o token que microc_yylex acabou
- * de devolver. */
+/* Libera o lexema dinamico do token anterior. So e chamada depois de
+ * copiar o texto para Token.lexema. */
+static void liberar_simbolo(void)
+{
+    free(microc_yylval.symbol);
+    free(microc_yylval.error_msg);
+    microc_yylval.symbol = NULL;
+    microc_yylval.error_msg = NULL;
+}
+
+/* Texto a guardar em Token.lexema para o token recem-lido:
+ *   - UNDEF: mensagem de erro do TP1;
+ *   - ID e constantes: Symbol, com escapes ja convertidos;
+ *   - demais tokens: texto reconhecido (microc_yytext). */
 static const char *texto_do_lexema(int tipo)
 {
     if (tipo == UNDEF && microc_yylval.error_msg != NULL)
         return microc_yylval.error_msg;
+    if (microc_yylval.symbol != NULL)
+        return microc_yylval.symbol;
     return microc_yytext;
 }
 
@@ -79,9 +85,11 @@ Token proximo_token(void)
     const char *texto;
 
     memset(&t, 0, sizeof t);
+    microc_yylval.symbol = NULL;
+    microc_yylval.error_msg = NULL;
     tipo = microc_yylex();
-    /* Observacao: o flex devolve 0 no fim da entrada, mas 0 e UNDEF no
-     * tokens.h. O TP1 deve devolver END_OF_FILE na regra <<EOF>>. */
+    /* O flex devolve 0 no fim da entrada; o TP1 deve devolver
+     * END_OF_FILE na regra <<EOF>>. */
     t.tipo = normalizar(tipo);
     t.linha = linha_atual;
     texto = t.tipo == END_OF_FILE ? "" : texto_do_lexema(tipo);
@@ -89,11 +97,12 @@ Token proximo_token(void)
         strncpy(t.lexema, texto, sizeof t.lexema - 1);
         t.lexema[sizeof t.lexema - 1] = '\0';
     }
+    liberar_simbolo();
     return t;
 }
 
 void scanner_finalizar(void)
 {
-    /* TODO(aluno): liberar tambem a tabela de strings do TP1. */
+    liberar_simbolo();
     microc_yylex_destroy();
 }

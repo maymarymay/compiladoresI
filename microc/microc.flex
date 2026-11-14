@@ -16,11 +16,7 @@
 #include "tokens.h"
 
 /* Valor semantico do token corrente. */
-typedef struct {
-    char *symbol;      /* lexema para ID, INTEGERCONST, CHARCONST, STRINGCONST */
-    char *error_msg;   /* mensagem de erro, usada quando o token e UNDEF        */
-    int symbol_len;    /* tamanho do lexema, podendo conter caractere nulo      */
-} YYSTYPE;
+#include "microc_yylval.h"
 
 YYSTYPE microc_yylval;
 
@@ -72,7 +68,7 @@ ALFANUM     [a-zA-Z0-9_]
 <COMMENT>"*/"       { BEGIN(INITIAL); }
 <COMMENT>\n         { linha_atual++; }
 <COMMENT><<EOF>>    {
-                        microc_yylval.error_msg = "EOF em comentario";
+                        microc_yylval.error_msg = strdup("EOF em comentario");
                         BEGIN(INITIAL);
                         return UNDEF;
                     }
@@ -80,7 +76,7 @@ ALFANUM     [a-zA-Z0-9_]
 
  /* Fechamento de comentario sem abertura correspondente. */
 "*/"                {
-                        microc_yylval.error_msg = "Comentario nao iniciado";
+                        microc_yylval.error_msg = strdup("Comentario nao iniciado");
                         return UNDEF;
                     }
 
@@ -168,13 +164,13 @@ ALFANUM     [a-zA-Z0-9_]
                     }
 
 '[^'\n]*            {
-                        microc_yylval.error_msg = "Constante de caractere nao terminada";
+                        microc_yylval.error_msg = strdup("Constante de caractere nao terminada");
                         return UNDEF;
                     }
 
  /* --- Constantes de string --------------------------------------------- */
 \"([^"\n\\]|\\.)*\0([^"\n\\]|\\.)*\" {
-                        microc_yylval.error_msg = "String contem caractere nulo";
+                        microc_yylval.error_msg = strdup("String contem caractere nulo");
                         return UNDEF;
                     }
 
@@ -210,11 +206,11 @@ ALFANUM     [a-zA-Z0-9_]
 
 \"([^"\n\\]|\\.)*\n {
                         yyless(yyleng - 1);
-                        microc_yylval.error_msg = "String nao terminada";
+                        microc_yylval.error_msg = strdup("String nao terminada");
                         return UNDEF;
 }
 \"([^"\n\\]|\\.)*   {
-                        microc_yylval.error_msg = "EOF em string";
+                        microc_yylval.error_msg = strdup("EOF em string");
                         return UNDEF;
                     }
 
