@@ -1,61 +1,119 @@
-aluno: <sua_matricula>
-uso_ia: <sim|nao>
+aluno: Maryana 202319040649; Mileny 202319040282
+uso_ia: sim
 
-# Compiladores I — Trabalho Prático 2: Gerador de Analisadores Sintáticos Descendentes Recursivos
+# TP2 - Gerador de Analisadores Sintáticos
 
-Código-base do gerador. Ele lê uma gramática em EBNF e gera, em ANSI C, um analisador sintático descendente recursivo para a linguagem descrita. Veja o enunciado para os requisitos completos.
+Esse trabalho é um programa em C (o `gerador`) que lê uma gramática escrita em EBNF e cria o código de um analisador sintático. Depois a gente compila esse código e usa o analisador para ver se um programa está certo ou não.
 
-As duas primeiras linhas deste arquivo seguem o formato do TP1: uma linha `aluno:` por integrante e a linha `uso_ia:` logo abaixo. Registre o uso de IA em `USO_IA.md`.
+O uso de IA está no arquivo `USO_IA.md`.
 
-## Compilar e executar
-
-```
-make                      # compila o gerador (e o analisador de Micro C, se o TP1 estiver em microc/)
-make test                 # executa os testes de testes/
-make microc               # gera e compila build/microc/parser_microc
-make clean
-```
+## O que precisa ter instalado
 
 ```
-./gerador gramatica.ebnf -o saida/parser [--scanner microc] [--sets] [--tree] [--debug]
-gcc -ansi -pedantic -Wall -Wextra -o parser saida/parser.c
-./parser [--tree] programa.txt        # ou: ./parser --tokens tokens.txt
+sudo apt install build-essential flex valgrind
 ```
 
-Todo o código deve compilar sem avisos com `gcc -ansi -pedantic -Wall -Wextra`. A única exceção é o `lex.yy.c` gerado pelo flex.
-
-## Estado do código-base
-
-O esqueleto compila, executa de ponta a ponta e gera um analisador que compila, mas que ainda não reconhece nada. Os pontos a implementar estão marcados com `TODO(aluno)`:
+## Compilar
 
 ```
-grep -rn "TODO(aluno)" src microc
+make
 ```
 
-| Etapa | Arquivo | Fornecido | A implementar |
-| --- | --- | --- | --- |
-| 1. Leitura da EBNF | `ebnf_lexer.c`, `ebnf_parser.c` | léxico da notação; seções TOKENS e RULES; recuperação de erros | `parse_expr`, `parse_seq`, `parse_fator` |
-| 2. Verificação semântica | `verificacao.c` | indefinidos, terminais não declarados, duplicados | inalcançáveis, improdutivos, recursão à esquerda |
-| 3. Conjuntos | `conjuntos.c` | alocação e impressão (`--sets`) | anulável, FIRST, FOLLOW |
-| 4. LL(1) | `ll1.c` | formatação das mensagens | as três condições LL(1) |
-| 5. Geração | `codegen.c` | estrutura do `.c`/`.h`, nomes dos tokens, conjuntos constantes, primitivas, léxico (exceto as regex), `main` | `gen_expr` (sequência, alternativa, `[ ]`, `{ }`), `gen_casamento_regex`, `gen_token_de_arquivo` |
-| Micro C | `microc_mapa.c`, `microc/scanner.c` | tabela literal → `TokenType`, adaptador do scanner | `microc_carregar_tokens_h`; ajustes ao seu TP1 |
+Isso cria o programa `./gerador`. Para apagar tudo e começar de novo, use `make clean`.
 
-Módulos de apoio prontos: `util.c` (alocação e diagnósticos), `bitset.c` (conjuntos de terminais), `gramatica.c` (estrutura da gramática, impressão em EBNF) e `main.c` (ordem das etapas).
+## Rodar os testes
 
-Comece por `gramatica.h`, que descreve a árvore `Expr` usada em todas as etapas.
+```
+make test
+```
 
-## Integração com o scanner do TP1 (seção 3.1 do enunciado)
+No final tem que aparecer que todos os testes passaram.
 
-1. Copie `microc.flex`, `tokens.h` e os demais `.c`/`.h` do seu TP1, como a tabela de strings, para `microc/`.
-2. No `microc.flex`, use `%option prefix="microc_yy" noyywrap` e devolva `END_OF_FILE` na regra `<<EOF>>`.
-3. Ajuste `microc/scanner.c` ao seu TP1: lexema vindo da tabela de strings e mensagem de erro de `error_msg` no token UNDEF.
-4. Rode `make microc` e `make test`.
+## Como usar
 
-A gramática `testes/gramaticas/microc.ebnf` é a do Apêndice B do livro-texto, fatorada para LL(1). O `else` pendente gera um aviso de conflito em `[ "else" comando ]`. O conflito é resolvido de forma gulosa: o `else` fica com o `if` mais próximo.
+1. Gerar o analisador:
 
-## Testes
+```
+./gerador testes/gramaticas/expr.ebnf -o build/expr
+```
 
-`testes/executar.sh` compara a saída do gerador (`testes/esperado/*.gerador`) e a dos analisadores gerados (`testes/programas/<gramatica>/*.esperado`) com as saídas esperadas. Cada caso termina com a linha `status <código de saída>`. Acrescente seus próprios casos: o enunciado pede pelo menos 5 gramáticas e 3 programas aceitos e 3 rejeitados por gramática válida.
+2. Compilar o analisador que foi gerado:
 
-Os programas de Micro C só rodam depois de `make microc`. O caso `rejeitado_lexico.mc` espera a mensagem "String nao terminada" do seu TP1.
+```
+gcc build/expr.c -o build/expr_bin
+```
+
+3. Rodar com um programa de entrada:
+
+```
+./build/expr_bin testes/programas/expr/aceito_1.txt
+```
+
+Se estiver tudo certo aparece `entrada aceita`. Se tiver erro, ele mostra a linha, a coluna e o que esperava, por exemplo:
+
+```
+linha 1, coluna 10: encontrado ')', esperado um de {NUM, ID, '('}
+```
+
+### Opções do gerador
+
+- `--sets`: mostra anulável, FIRST e FOLLOW
+- `--debug`: mostra a gramática do jeito que foi lida
+- `--tree`: no passo 2, deixa o analisador mostrar a árvore (use `./build/expr_bin --tree arquivo.txt`)
+
+### Gramáticas com erro
+
+O gerador não gera nada quando a gramática tem erro, por exemplo recursão à esquerda ou conflito LL(1). Para ver:
+
+```
+./gerador testes/gramaticas/conflito_ll1.ebnf -o build/x
+```
+
+## Micro C
+
+Para o Micro C o analisador usa o scanner do TP1 (pasta `microc/`). O `make` já compila ele.
+
+```
+./build/microc/parser_microc testes/programas/microc/soma.mc
+```
+
+Também dá para ler um arquivo de tokens gerado pelo TP1:
+
+```
+./lexer programa.mc > tokens.txt
+./build/microc/parser_microc --tokens tokens.txt
+```
+
+O `./lexer` é o executável do TP1.
+
+### O que mudou do TP1
+
+- os tokens saíram do `microc.flex` e foram para o `tokens.h`
+- a struct `YYSTYPE` foi para o `microc_yylval.h`
+- o flex usa `%option prefix="microc_yy" noyywrap` e no `<<EOF>>` devolve `END_OF_FILE`
+- tirei o `main()` do TP1
+- o `microc/scanner.c` transforma o resultado do scanner em `Token`
+
+  ## O que foi feito
+
+O gerador faz 5 etapas, sempre nessa ordem, e para na primeira que achar erro:
+
+1. **Leitura da gramática** (`ebnf_parser.c`): lê as regras, com `|`, `[ ]`, `{ }` e `( )`, e monta a árvore de cada regra. Mostra erros com linha e coluna.
+2. **Verificação da gramática** (`verificacao.c`): acha não terminal usado e não definido, terminal não declarado, não terminal inalcançável (só aviso) e não terminal que não gera nada (improdutivo).
+3. **Anulável, FIRST e FOLLOW** (`conjuntos.c`), e também a **recursão à esquerda**, direta e indireta (`verificacao.c`), que precisa do anulável.
+4. **Condição LL(1)** (`ll1.c`): recusa quando duas alternativas começam igual, e avisa no caso do `else` pendente.
+5. **Geração do código** (`codegen.c`): escreve o `.c` e o `.h` do analisador, com o léxico feito a partir das expressões regulares e a leitura do arquivo de tokens.
+
+### Gramáticas de teste
+
+- Válidas, com programas aceitos e rejeitados: `expr`, `json` e `microc`
+- Válida só com aviso: `ll1_opc_follow`
+- Recusadas de propósito: `recursao_esquerda`, `recursao_mascarada`, `conflito_ll1`, `ll1_ambas_anulaveis`, `ll1_first_comum` e `ll1_follow_colide`
+
+O `make test` roda 29 testes e todos passam. O `valgrind` não achou vazamento no gerador nem nos analisadores gerados.
+
+## Pastas
+
+- `src/`: código do gerador
+- `microc/`: scanner do TP1 adaptado
+- `testes/`: gramáticas, programas de teste e saídas esperadas
