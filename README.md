@@ -31,19 +31,25 @@ No final tem que aparecer que todos os testes passaram.
 
 ## Como usar
 
-1. Gerar o analisador:
+1. Criar a pasta de saída 
+
+```
+mkdir -p build
+```
+
+2. Gerar o analisador:
 
 ```
 ./gerador testes/gramaticas/expr.ebnf -o build/expr
 ```
 
-2. Compilar o analisador que foi gerado:
+3. Compilar o analisador que foi gerado:
 
 ```
 gcc build/expr.c -o build/expr_bin
 ```
 
-3. Rodar com um programa de entrada:
+4. Rodar com um programa de entrada:
 
 ```
 ./build/expr_bin testes/programas/expr/aceito_1.txt
