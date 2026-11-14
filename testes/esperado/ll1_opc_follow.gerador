@@ -1,0 +1,5 @@
+NAO TERMINAL  ANULAVEL  FIRST / FOLLOW
+s             nao       FIRST  = {'a'}
+                        FOLLOW = {$}
+testes/gramaticas/ll1_opc_follow.ebnf:6:7: aviso: conflito LL(1) em s: FIRST e FOLLOW de [ ] se intersectam (resolvido de forma gulosa) em {'a'}
+status 0

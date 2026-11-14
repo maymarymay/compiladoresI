@@ -1,0 +1,6 @@
+(* Deve ser RECUSADA: as alternativas de s comecam com "a" *)
+TOKENS
+  SKIP = /[ \t\r\n]+/ ;
+
+RULES
+  s = "a" "b" | "a" "c" ;

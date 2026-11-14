@@ -1,0 +1,6 @@
+NAO TERMINAL  ANULAVEL  FIRST / FOLLOW
+s             sim       FIRST  = {TX, TY}
+                        FOLLOW = {$}
+testes/gramaticas/ll1_ambas_anulaveis.ebnf:8:7: erro: conflito LL(1) em s: alternativas 1 e 2 sao ambas anulaveis
+testes/gramaticas/ll1_ambas_anulaveis.ebnf: a gramatica nao e LL(1); nenhum codigo foi gerado
+status 1

@@ -1,0 +1,7 @@
+(* Deve ser RECUSADA: p e anulavel e seu FOLLOW {"q"} colide com o FIRST da alternativa "q" *)
+TOKENS
+  SKIP = /[ \t\r\n]+/ ;
+
+RULES
+  s = ( p | "q" ) "q" ;
+  p = [ "p" ] ;

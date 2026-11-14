@@ -1,0 +1,6 @@
+(* Deve ser ACEITA com AVISO: FIRST de [ "a" ] colide com o FOLLOW da construcao *)
+TOKENS
+  SKIP = /[ \t\r\n]+/ ;
+
+RULES
+  s = [ "a" ] "a" ;

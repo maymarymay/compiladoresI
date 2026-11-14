@@ -1,0 +1,8 @@
+(* Deve ser RECUSADA: as duas alternativas de s sao anulaveis *)
+TOKENS
+  TX   = /x/ ;
+  TY   = /y/ ;
+  SKIP = /[ \t\r\n]+/ ;
+
+RULES
+  s = [ TX ] | [ TY ] ;

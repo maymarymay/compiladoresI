@@ -1,0 +1,8 @@
+NAO TERMINAL  ANULAVEL  FIRST / FOLLOW
+s             nao       FIRST  = {'q', 'p'}
+                        FOLLOW = {$}
+p             sim       FIRST  = {'p'}
+                        FOLLOW = {'q'}
+testes/gramaticas/ll1_follow_colide.ebnf:6:9: erro: conflito LL(1) em s: alternativa 1 e anulavel e o FOLLOW colide com o FIRST da alternativa 2 {'q'}
+testes/gramaticas/ll1_follow_colide.ebnf: a gramatica nao e LL(1); nenhum codigo foi gerado
+status 1
