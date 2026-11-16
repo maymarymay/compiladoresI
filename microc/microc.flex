@@ -116,7 +116,8 @@ ALFANUM     [a-zA-Z0-9_]
   * Um '-' seguido de digitos e numero negativo, exceto quando vem depois
   * de um valor: entao e o operador de subtracao. */
 "-"{DIGIT}+         {
-                        if (ultimo_token == INTEGERCONST || ultimo_token == ID ||
+                        if (ultimo_token == INTEGERCONST || ultimo_token == CHARCONST ||
+                            ultimo_token == ID ||
                             ultimo_token == RPAREN || ultimo_token == RBRACKET) {
                             /* vem depois de um valor: e subtracao.
                              * Devolve os digitos ao fluxo de entrada. */
@@ -156,8 +157,9 @@ ALFANUM     [a-zA-Z0-9_]
                         } else {
                             c = yytext[1];
                         }
-                        microc_yylval.symbol = malloc(1);
-                        memcpy(microc_yylval.symbol, &c, 1);
+                        microc_yylval.symbol = malloc(2);
+                        microc_yylval.symbol[0] = c;
+                        microc_yylval.symbol[1] = '\0';
                         microc_yylval.symbol_len = 1;
                         ultimo_token = CHARCONST;
                         return CHARCONST;
@@ -204,7 +206,7 @@ ALFANUM     [a-zA-Z0-9_]
                         return STRINGCONST;
                     }
 
-\"([^"\n\\]|\\.)*\n {
+\"([^"\n\\]|\\.)*\\?\n {
                         yyless(yyleng - 1);
                         microc_yylval.error_msg = strdup("String nao terminada");
                         return UNDEF;
