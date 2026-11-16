@@ -1,7 +1,5 @@
-aluno: Maryana 202319040649; 
-
+aluno: Maryana 202319040649
 Mileny 202319040282
-
 uso_ia: sim
 
 # TP2 - Gerador de Analisadores Sintáticos
