@@ -14,9 +14,6 @@
  * Fornecido: toda a estrutura acima, os nomes dos tokens, os conjuntos,
  * as primitivas, o lexico (exceto o reconhecimento das expressoes
  * regulares) e a traducao de terminais e nao terminais.
- *
- * TODO(aluno):
- *   - gen_token_de_arquivo: leitura do arquivo de tokens do TP1.
  */
 #include <ctype.h>
 #include <stdarg.h>
@@ -1008,14 +1005,19 @@ static void gen_token_de_arquivo(FILE *f, const Gramatica *g)
         "            k = (int) sizeof lexema - 1;",
         "        memcpy(lexema, q, k);",
         "        lexema[k] = '\\0';",
-        "        for (k = 0; tabela_tipos[k].nome != NULL; k++)",
-        "            if (strcmp(tabela_tipos[k].nome, nome) == 0)",
-        "                break;",
-        "        if (tabela_tipos[k].nome == NULL) {",
-        "            fprintf(stderr, \"arquivo de tokens, linha %d: tipo desconhecido '%s'\\n\", num_linha, nome);",
-        "            exit(EXIT_FAILURE);",
+        "        if (nome[0] >= '0' && nome[0] <= '9') {",
+        "            /* formato do TP1: o tipo e o numero do token */",
+        "            t.tipo = atoi(nome);",
+        "        } else {",
+        "            for (k = 0; tabela_tipos[k].nome != NULL; k++)",
+        "                if (strcmp(tabela_tipos[k].nome, nome) == 0)",
+        "                    break;",
+        "            if (tabela_tipos[k].nome == NULL) {",
+        "                fprintf(stderr, \"arquivo de tokens, linha %d: tipo desconhecido '%s'\\n\", num_linha, nome);",
+        "                exit(EXIT_FAILURE);",
+        "            }",
+        "            t.tipo = tabela_tipos[k].tipo;",
         "        }",
-        "        t.tipo = tabela_tipos[k].tipo;",
         "        strncpy(t.lexema, lexema, sizeof t.lexema - 1);",
         "        t.lexema[sizeof t.lexema - 1] = '\\0';",
         "        t.linha = atoi(lin + 8);",
