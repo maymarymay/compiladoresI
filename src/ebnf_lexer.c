@@ -172,7 +172,8 @@ static MetaToken ler_identificador(MetaLexer *lx, int l, int c)
         return criar(MT_NOME_TERM, texto, l, c);
     diag_erro(l, c, "identificador '%s' invalido: terminais usam so maiusculas "
               "e nao terminais comecam com minuscula", texto);
-    return criar(MT_NAOTERM, texto, l, c);
+    free(texto);
+    return criar(MT_ERRO, NULL, l, c);
 }
 
 MetaToken mlex_proximo(MetaLexer *lx)
