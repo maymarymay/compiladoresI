@@ -104,7 +104,7 @@ static int verif_inalcancaveis(Gramatica *g)
     for (i = 0; i < g->nnts; i++)
         if (!alcancado[i])
             diag_aviso(g->nts[i].linha, g->nts[i].coluna,
-                       "nao terminal %s sobra inalcancavel a partir de %s",
+                       "nao terminal %s inalcancavel a partir de %s",
                        g->nts[i].nome, g->nts[g->inicial].nome);
     free(alcancado);
     return 0;
