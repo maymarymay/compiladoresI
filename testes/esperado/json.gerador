@@ -1,0 +1,12 @@
+NAO TERMINAL  ANULAVEL  FIRST / FOLLOW
+json          nao       FIRST  = {STRING, NUMBER, 'true', 'false', 'null', '{', '['}
+                        FOLLOW = {$}
+valor         nao       FIRST  = {STRING, NUMBER, 'true', 'false', 'null', '{', '['}
+                        FOLLOW = {$, ',', '}', ']'}
+objeto        nao       FIRST  = {'{'}
+                        FOLLOW = {$, ',', '}', ']'}
+vetor         nao       FIRST  = {'['}
+                        FOLLOW = {$, ',', '}', ']'}
+membro        nao       FIRST  = {STRING}
+                        FOLLOW = {',', '}'}
+status 0
